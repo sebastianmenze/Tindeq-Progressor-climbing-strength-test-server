@@ -4,5 +4,5 @@ A python and bokeh application that creates a user interface to run climbing str
 Partially based on this repository: https://github.com/StuartLittlefair/PyTindeq
 
 ![]([Capture.JPG)
-![tindeq_assessment/static/Presentation1.gif]([)
+![/tindeq_assessment/static/Presentation1.gif](/tindeq_assessment/static/Presentation1.gif)
 
