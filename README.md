@@ -11,7 +11,7 @@ run as bokeh server (current password is 'pw', can be changed in code):
 bokeh serve tindeq_assessment --show
 ```
 
-or standalone version:
+or standalone version (no password required):
 ```python
 python standalone.py
 ```
