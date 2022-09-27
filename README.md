@@ -3,6 +3,17 @@ A python and bokeh application that creates a user interface to run climbing str
 
 Partially based on this repository: https://github.com/StuartLittlefair/PyTindeq
 
+run as bokeh server:
+
+```python
+bokeh serve tindeq_assessment --show
+```
+
+or standalone version:
+```python
+python tindeq_assessment/standalone.py
+```
+
 ![](Capture.JPG)
 ![/tindeq_assessment/static/Presentation1.gif](/tindeq_assessment/static/Presentation1.gif)
 
