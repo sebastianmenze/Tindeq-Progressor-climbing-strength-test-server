@@ -13,7 +13,7 @@ bokeh serve tindeq_assessment --show
 
 or standalone version:
 ```python
-python tindeq_assessment/standalone.py
+python standalone.py
 ```
 Compiled .exe can be downloaded under 'releases'
 
