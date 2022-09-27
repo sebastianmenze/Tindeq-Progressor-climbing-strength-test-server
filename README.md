@@ -15,6 +15,7 @@ or standalone version:
 ```python
 python tindeq_assessment/standalone.py
 ```
+Compiled .exe can be downloaded under 'releases'
 
 ![](Capture.JPG)
 ![/tindeq_assessment/static/Presentation1.gif](/tindeq_assessment/static/Presentation1.gif)
