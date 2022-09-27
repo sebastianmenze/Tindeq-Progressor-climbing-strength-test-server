@@ -304,6 +304,7 @@ class CFT:
                     df_results = pd.read_csv(  email + '_results.csv',index_col=0 )
                     df_results['datetime'] = pd.to_datetime( df_results['datetime'] )         
                     df_results=df_results.append( {'datetime':now,'max_left':self.max_left,'max_right':self.max_right,'peak_force':self.cf_peak_load,'critical_force':self.cf_critical_load},ignore_index=True )
+                    df_results=df_results.replace(0,np.nan)
                     df_results=df_results.drop_duplicates()
 
                     self.resultsource.data = df_results
