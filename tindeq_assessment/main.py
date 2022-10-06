@@ -104,7 +104,7 @@ class GoState:
         if elapsed > GoState.duration:
             GoState.end(parent)
         if (remain<=1.1) & (remain>.5) & (st.running==False ):   
-            st.start('end.wav',1.1)
+            st.start('tindeq_assessment/static/end.wav',1.1)
     @staticmethod
     def end(parent):
         parent.state_start = time.time()
@@ -230,15 +230,9 @@ class CFT:
         
         now = pd.to_datetime("today").date()
         
-        self.div_results = Div(text='<strong>Results:</strong> <br>\
-<ul>\
-<li>Max. strength left hand: {:.2f} kg</li>\
-<li>Max. strength right hand: {:.2f} kg</li>\
-<li>Peak force: {:.2f} kg</li>\
-<li>Critical force: {:.2f} kg</li>\
-</ul>'.format( self.max_left,self.max_right,self.cf_peak_load,self.cf_critical_load) ,
-                       style={'font-size': '150%', 'color': 'black',                             
+        self.div_results = Div(text='',style={'font-size': '150%', 'color': 'black',                             
                               'text-align': 'left'})
+        self.cf_percent=0
 
 
         # self.resultsource = ColumnDataSource(data=dict(x=self.cf_x, y=self.cf_y))
@@ -319,15 +313,17 @@ class CFT:
                 msg["To"] = emailto
                 msg["Subject"] = 'Climbing strength test results'
               
-                msgtext ='''\
-Results:\n\
-Max. strength left hand: {:.2f} kg\n\
-Max. strength right hand: {:.2f} kg\n\
-Peak force: {:.2f} kg\n\
-Critical force: {:.2f} kg\n\
-'''.format( self.max_left,self.max_right,self.cf_peak_load,self.cf_critical_load)
-                
-                msg.attach(MIMEText( msgtext   ,'plain'))
+#                 msgtext ='''\
+# Results:\n\
+# Max. strength left hand: {:.2f} kg\n\
+# Max. strength right hand: {:.2f} kg\n\
+# Peak force: {:.2f} kg\n\
+# Critical force: {:.2f} kg\n\
+# Critical force: {:.2f} % of peak force\n\
+# '''.format( self.max_left,self.max_right,self.cf_peak_load,self.cf_critical_load,self.cf_percent)
+  
+                msgtext = self.div_results.text              
+                msg.attach(MIMEText( msgtext   ,'html'))
                 
                 att = email + '_results.csv'
                 if os.path.exists( att ):
@@ -367,15 +363,8 @@ Critical force: {:.2f} kg\n\
         self.be3.on_click(sendmail)       
         
         self.text_input_bw = TextInput(value="", title="Enter body weight in kg to convert to % body weight")
-        # self.be4 = Button(label="Back to main menue")
-        # def convert_with_bw():
-        #     try:
-        #         bw= float(text_input_bw.value ,dtype=float)
 
-        # self.be4.on_click(convert_with_bw)
         
-        
-
         self.be4 = Button(label="Back to main menue")
         def back():
                 self.layout.children.pop()
@@ -396,6 +385,9 @@ Critical force: {:.2f} kg\n\
         self.calback_update_mail = doc.add_periodic_callback(self.update_email, 50)
 
     def update_email(self):    
+          if self.cf_peak_load>0:          
+              self.cf_percent=(self.cf_critical_load/self.cf_peak_load)*100
+          
           email = self.text_input_mail.value
           if len(email)>2 & ('@' in email) :          
                 self.be1.disabled = False
@@ -409,30 +401,40 @@ Critical force: {:.2f} kg\n\
               bw=float(self.text_input_bw.value)
               cf=self.cf_critical_load
               
-              # irca = cf/bw* 100*0.3 + 6
-              french_grades={1:'1',2:'2',3:'2+',4:'3-',5:'3',6:'3+',7:'4',8:'4+',9:'5',10:'5+',11:'6a',12:'6a+',13:'6b',14:'6b+',15:'6c',16:'6c+',17:'7a',18:'7a+',19:'7b',20:'7b+',21:'7c',22:'7c+',23:'8a',24:'8a+',25:'8b',26:'8b+',27:'8c',28:'8c+',29:'9a',30:'9a+'}
-              gmin= int(cf/bw*100 *0.25 + 6 )
-              gmax= int(cf/bw*100 *0.35 + 6 )        
-              if gmin < 1:
-                  gmin=1
-              if gmax > 30:
-                  gmax=30
-              if gmax < 1:
-                  gmax=1
-              if gmin > 30:
-                  gmin=30
-              french_grades[gmin]
-              french_grades[gmax]
-
-              self.div_results.text='<strong>Results:</strong> <br>\
-<ul>\
-<li>Max. strength left hand: {:.2f} % BW</li>\
-<li>Max. strength right hand: {:.2f} % BW</li>\
-<li>Peak force: {:.2f} % BW</li>\
-<li>Critical force: {:.2f} % BW</li>\
-'.format( self.max_left/bw,self.max_right/bw,self.cf_peak_load/bw,self.cf_critical_load/bw) +\
-    '<li>Predicted redpoint grade (french sport): '+french_grades[gmin] +' - '+ french_grades[gmax]+'</li></ul>'
-
+              if cf>0:        
+                  # irca = cf/bw* 100*0.3 + 6
+                  french_grades={1:'1',2:'2',3:'2+',4:'3-',5:'3',6:'3+',7:'4',8:'4+',9:'5',10:'5+',11:'6a',12:'6a+',13:'6b',14:'6b+',15:'6c',16:'6c+',17:'7a',18:'7a+',19:'7b',20:'7b+',21:'7c',22:'7c+',23:'8a',24:'8a+',25:'8b',26:'8b+',27:'8c',28:'8c+',29:'9a',30:'9a+'}
+                  gmin= int(cf/bw*100 *0.25 + 6 )
+                  gmax= int(cf/bw*100 *0.35 + 6 )        
+                  if gmin < 1:
+                      gmin=1
+                  if gmax > 30:
+                      gmax=30
+                  if gmax < 1:
+                      gmax=1
+                  if gmin > 30:
+                      gmin=30
+                  french_grades[gmin]
+                  french_grades[gmax]
+    
+                  self.div_results.text='<strong>Results:</strong> <br>\
+    <ul>\
+    <li>Max. strength left hand: {:.2f} % BW</li>\
+    <li>Max. strength right hand: {:.2f} % BW</li>\
+    <li>Peak force: {:.2f} % BW</li>\
+    <li>Critical force: {:.2f} % BW</li>\
+    <li>Critical force: {:.2f} % of peak force</li>\
+    '.format( (self.max_left/bw)*100,(self.max_right/bw)*100,(self.cf_peak_load/bw)*100,(self.cf_critical_load/bw)*100,self.cf_percent) +\
+        '<li>Predicted redpoint grade (french sport): '+french_grades[gmin] +' - '+ french_grades[gmax]+'</li></ul>'
+              else:              
+                  self.div_results.text='<strong>Results:</strong> <br>\
+    <ul>\
+    <li>Max. strength left hand: {:.2f} % BW</li>\
+    <li>Max. strength right hand: {:.2f} % BW</li>\
+    <li>Peak force: {:.2f} % BW</li>\
+    <li>Critical force: {:.2f} % BW</li>\
+    <li>Critical force: {:.2f} % of peak force</li></ul>\
+    '.format( (self.max_left/bw)*100,(self.max_right/bw)*100,(self.cf_peak_load/bw)*100,(self.cf_critical_load/bw)*100,self.cf_percent) 
               
           except:          
             self.div_results.text='<strong>Results:</strong> <br>\
@@ -441,7 +443,8 @@ Critical force: {:.2f} kg\n\
             <li>Max. strength right hand: {:.2f} kg</li>\
             <li>Peak force: {:.2f} kg</li>\
             <li>Critical force: {:.2f} kg</li>\
-            </ul>'.format( self.max_left,self.max_right,self.cf_peak_load,self.cf_critical_load)               
+            <li>Critical force: {:.2f} % of peak force</li>\
+            </ul>'.format( self.max_left,self.max_right,self.cf_peak_load,self.cf_critical_load,self.cf_percent)               
               
         
     def check_for_timeout(self):
@@ -521,7 +524,7 @@ Critical force: {:.2f} kg\n\
         
         self.button_save = Button(label='Save and back to main menue')
         self.div_load = Div(text='Load: ---',
-                       style={'font-size': '200%', 'color': 'black',                             
+                       style={'font-size': '300%', 'color': 'black',                             
                               'text-align': 'center'})       
         
         def mainmenue():
@@ -534,9 +537,12 @@ Critical force: {:.2f} kg\n\
                     io_loop.add_callback(stop_tindeq_logging, self)
 
         self.button_save.on_click(mainmenue)
+ 
+        div_instruct = Div(text='Turn on tindeq device using small black button',\
+                       style={'font-size': '100%', 'color': 'black',                             
+                              'text-align': 'left'})        
         
-        
-        widgets = column( self.btn_go , self.button_save,self.div_load,width=400 ) 
+        widgets = column( div_instruct,self.btn_go , self.button_save,self.div_load,width=400 ) 
         # first_row = row(widgets, fig)
         
         self.layout=row(widgets, fig)
@@ -604,39 +610,8 @@ Critical force: {:.2f} kg\n\
                        style={'font-size': '200%', 'color': 'black',                             
                               'text-align': 'center'})
         
-        # self.div = Div(text='0 kg',
-        #                style={'font-size': '600%', 'color': 'red',                             
-        #                       'text-align': 'center'})
-        # self.results_div = Div(text='', sizing_mode='stretch_width',
-        #                        style={'font-size': '150%', 'color': 'black',
-        #                               'text-align': 'left'})
-        # def reset():
-        #     self.source.data=dict(x=[], y=[])
-        #     self.div.text = '0 kg'
-        # button_reset.on_click(reset)
-        
-        # def onclick_left(self):
-        #     self.duration = 30
-        #     self.source.data=dict(x=[], y=[])
-        #     self.maxtest_left=True
-        #     def sctn():  
-        #         self.maxtest_left=False 
-        #     s = threading.Timer(self.duration, sctn)  
-        #     s.start()  
-        #     io_loop = tornado.ioloop.IOLoop.current()
-        #     io_loop.add_callback(start_test_max, self)
-        self.btn_left.on_click(self.onclick_left)
 
-        # def onclick_right(self):
-        #     self.duration = 30
-        #     self.source.data=dict(x=[], y=[])
-        #     self.maxtest_right=True
-        #     def sctn():  
-        #         self.maxtest_right=False 
-        #     s = threading.Timer(self.duration, sctn)  
-        #     s.start()  
-        #     io_loop = tornado.ioloop.IOLoop.current()
-        #     io_loop.add_callback(start_test_max, self)
+        self.btn_left.on_click(self.onclick_left)
         self.btn_right.on_click(self.onclick_right)
         
         self.button_save = Button(label='Save and back to main menue')
@@ -645,7 +620,9 @@ Critical force: {:.2f} kg\n\
                 self.layout.children.pop()
                 self.make_document_choice(doc)       
                 doc.remove_periodic_callback(self.calback_update_max)
-
+                if self.tindeq is not None:
+                    io_loop = tornado.ioloop.IOLoop.current()              
+                    io_loop.add_callback(stop_tindeq_logging, self)
         self.button_save.on_click(mainmenue)
         
         
@@ -697,17 +674,17 @@ Critical force: {:.2f} kg\n\
             
             if (len( self.source.data['y'] )>1) & (self.maxtest_right):
                 self.max_right= np.round( np.max( np.array( self.source.data['y'] ,dtype=float ) ),2)
-                self.btn_right.disabled=True
-                self.btn_left.disabled=True
-                self.button_save.disabled=True
+            #     self.btn_right.disabled=True
+            #     self.btn_left.disabled=True
+            #     self.button_save.disabled=True
 
             self.div_rh.text = 'Right hand: '+str( self.max_right )  +' kg'
 
             if (len( self.source.data['y'] )>1) & (self.maxtest_left):
                 self.max_left= np.round( np.max( np.array( self.source.data['y'] ,dtype=float ) ),2)
-                self.btn_right.disabled=True
-                self.btn_left.disabled=True
-                self.button_save.disabled=True
+            #     self.btn_right.disabled=True
+            #     self.btn_left.disabled=True
+            #     self.button_save.disabled=True
                 
             if (self.maxtest_right==False) & (self.maxtest_left==False) & (self.tindeq is not None):      
                 self.btn_right.disabled=False
@@ -732,7 +709,7 @@ Critical force: {:.2f} kg\n\
         # self.ynew = []
         self.active = False
         self.duration = 240
-        self.reps = 24
+        self.reps = 25
         self.state = IdleState
         self.test_done = False
         self.analysed = False
@@ -751,7 +728,9 @@ Critical force: {:.2f} kg\n\
                 self.make_document_choice(doc)       
                 self.state== IdleState
                 doc.remove_periodic_callback(self.calback_update_cft)
-
+                if self.tindeq is not None:
+                    io_loop = tornado.ioloop.IOLoop.current()              
+                    io_loop.add_callback(stop_tindeq_logging, self)
                 # await self.tindeq.stop_logging_weight()       
                 
         button_save.on_click(mainmenue)        
@@ -759,15 +738,16 @@ Critical force: {:.2f} kg\n\
         div_instruct = Div(text='<strong>Instructions:</strong> <br>\
                                 <ul>\
                                   <li>Turn on tindeq device (small black button)</li>\
+                                  <li>Use only left or right hand</li>\
                                   <li>Test starts with 10s countdown</li>\
                                   <li>Than pull has hard as you can on 20mm edge for 7s</li>\
                                   <li>Short 3s rest</li>\
-                                  <li>Repeat 24x and get ridiculously pumped</li>\
+                                  <li>Repeat 25x and get ridiculously pumped</li>\
                                 </ul>',
                        style={'font-size': '100%', 'color': 'black',                             
                               'text-align': 'left'})
                 
-        duration_slider = Slider(start=5, end=30, value=24,
+        duration_slider = Slider(start=5, end=30, value=25,
                                  step=1, title="Reps")
         self.laps = Div(text=f'Rep {0}/{duration_slider.value}',
                         style={'font-size': '400%', 'color': 'black',
@@ -785,6 +765,9 @@ Critical force: {:.2f} kg\n\
             self.duration = self.reps * 10
             io_loop = tornado.ioloop.IOLoop.current()
             io_loop.add_callback(start_test_cft, self)
+            self.reset()        
+            self.source.data=dict(x=[], y=[])
+            io_loop.add_callback(start_tindeq_logging, self)            
 
         self.btn.on_click(onclick)
         self.btn.disabled=True
@@ -801,7 +784,7 @@ Critical force: {:.2f} kg\n\
     def update_cft(self):
         if self.test_done and not self.analysed:
             self.btn.label = 'Test Complete'
-            np.savetxt('critical_force_test.txt', np.column_stack((self.x, self.y)))
+            # np.savetxt('critical_force_test.txt', np.column_stack((self.x, self.y)))
             x = np.array(self.x)
             y = np.array(self.y)
             
@@ -820,6 +803,7 @@ Critical force: {:.2f} kg\n\
                 
                 msg= '<p>Peak force = {:.2f} +/- {:.2f} kg</p>'.format( fmeans[imax], e_fmeans[imax])
                 msg += '<p>Critical force = {:.2f} +/- {:.2f} kg</p>'.format(load_asymptote, e_load_asymptote) 
+                msg += '<p>Critical force = {:.2f} % of peak force</p>'.format(100*load_asymptote/fmeans[imax]) 
                 self.results_div.text = msg
                 # fill_src = ColumnDataSource(dict(x=tmeans, upper=predicted_force,
                 #                                  lower=load_asymptote*np.ones_like(tmeans)))
@@ -874,14 +858,15 @@ async def start_test_max(cft):
         
 async def start_test_cft(cft):
     try:
+        # cft.state.end(cft)
 
-        cft.state.end(cft)
-        await cft.tindeq.start_logging_weight()
-        await asyncio.sleep(cft.state.duration)
+        # cft.state.end(cft)
+        # await cft.tindeq.start_logging_weight()
+        # await asyncio.sleep(cft.state.duration)
 
         print('Test starts!')
         cft.state.end(cft)
-        cft.active = True
+        # cft.active = True
         await asyncio.sleep(cft.duration)
         await cft.tindeq.stop_logging_weight()
         cft.test_done = True
