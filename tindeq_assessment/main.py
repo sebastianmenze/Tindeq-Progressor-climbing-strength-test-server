@@ -1,5 +1,19 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Oct 10 12:52:18 2022
+
+@author: Administrator
+"""
+
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Oct 10 10:59:17 2022
+
+@author: Administrator
+"""
+
 from src.tindeq import TindeqProgressor
-from src.analysis import analyse_data
+# from src.analysis import analyse_data
 
 #%%
 import time
@@ -17,7 +31,7 @@ from bokeh.application import Application
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.plotting import figure, ColumnDataSource, curdoc
 from bokeh.layouts import row, column
-from bokeh.models import Button, Slider, Div, Band, Whisker
+from bokeh.models import Button, Slider, Div, Band, Whisker, Spinner, DataTable,TableColumn,DateFormatter
 
 from bokeh.models import Button, CustomJS, PasswordInput, PreText, TextInput
 
@@ -33,6 +47,7 @@ from email import encoders
 from email.message import Message
 from email.mime.base import MIMEBase
 from email.mime.text  import MIMEText
+
 #%%
 
 
@@ -152,13 +167,15 @@ class CFT:
         self.test_done = False
         self.analysed = False
         self.tindeq = None
-        io_loop = tornado.ioloop.IOLoop.current()
+        # io_loop = tornado.ioloop.IOLoop.current()
         # io_loop.add_callback(connect, self)
         self.pwd = 'pw'
         self.maxtest_right=False 
         self.maxtest_left=False 
         self.max_right=0 
         self.max_left=0 
+        self.rfd_right=0 
+        self.rfd_left=0        
         self.cf_peak_load = 0
         self.cf_critical_load = 0   
         self.cf_x = []  
@@ -227,8 +244,19 @@ class CFT:
         self.make_login(doc)
         
     def make_document_email(self, doc):
-        
         now = pd.to_datetime("today").date()
+     
+        # df_results=pd.DataFrame(columns=['datetime','max_left','max_right','peak_force','critical_force','rfd_left','rfd_right'])
+        # df_results=df_results.append( {'datetime':now,'max_left':self.max_left,'max_right':self.max_right,'peak_force':self.cf_peak_load,'critical_force':self.cf_critical_load,'rfd_left':self.rfd_left,'rfd_right':self.rfd_right},ignore_index=True )
+        
+        # Columns = [TableColumn(field=Ci, title=Ci) for Ci in df_results.columns] # bokeh columns
+
+
+        
+        # self.source_results=ColumnDataSource(df_results)
+
+        # self.data_table = DataTable(columns=Columns,source=self.source_results, width=400, height=200)
+
         
         self.div_results = Div(text='',style={'font-size': '150%', 'color': 'black',                             
                               'text-align': 'left'})
@@ -419,12 +447,14 @@ class CFT:
     
                   self.div_results.text='<strong>Results:</strong> <br>\
     <ul>\
-    <li>Max. strength left hand: {:.2f} % BW</li>\
-    <li>Max. strength right hand: {:.2f} % BW</li>\
+    <li>Max. strength left: {:.2f} % BW</li>\
+    <li>Max. strength right: {:.2f} % BW</li>\
     <li>Peak force: {:.2f} % BW</li>\
     <li>Critical force: {:.2f} % BW</li>\
     <li>Critical force: {:.2f} % of peak force</li>\
-    '.format( (self.max_left/bw)*100,(self.max_right/bw)*100,(self.cf_peak_load/bw)*100,(self.cf_critical_load/bw)*100,self.cf_percent) +\
+    <li>RFD left: {:.2f} % kg/s</li>\
+    <li>RFD right: {:.2f} % kg/s</li>\
+    '.format( (self.max_left/bw)*100,(self.max_right/bw)*100,(self.cf_peak_load/bw)*100,(self.cf_critical_load/bw)*100,self.cf_percent,self.rfd_left,self.rfd_right) +\
         '<li>Predicted redpoint grade (french sport): '+french_grades[gmin] +' - '+ french_grades[gmax]+'</li></ul>'
               else:              
                   self.div_results.text='<strong>Results:</strong> <br>\
@@ -433,8 +463,10 @@ class CFT:
     <li>Max. strength right hand: {:.2f} % BW</li>\
     <li>Peak force: {:.2f} % BW</li>\
     <li>Critical force: {:.2f} % BW</li>\
-    <li>Critical force: {:.2f} % of peak force</li></ul>\
-    '.format( (self.max_left/bw)*100,(self.max_right/bw)*100,(self.cf_peak_load/bw)*100,(self.cf_critical_load/bw)*100,self.cf_percent) 
+    <li>Critical force: {:.2f} % of peak force</li\
+    <li>RFD left: {:.2f} % kg/s</li>\
+    <li>RFD right: {:.2f} % kg/s</li>></ul>\
+    '.format( (self.max_left/bw)*100,(self.max_right/bw)*100,(self.cf_peak_load/bw)*100,(self.cf_critical_load/bw)*100,self.cf_percent,self.rfd_left,self.rfd_right) 
               
           except:          
             self.div_results.text='<strong>Results:</strong> <br>\
@@ -444,7 +476,9 @@ class CFT:
             <li>Peak force: {:.2f} kg</li>\
             <li>Critical force: {:.2f} kg</li>\
             <li>Critical force: {:.2f} % of peak force</li>\
-            </ul>'.format( self.max_left,self.max_right,self.cf_peak_load,self.cf_critical_load,self.cf_percent)               
+            <li>RFD left: {:.2f} % kg/s</li>\
+            <li>RFD right: {:.2f} % kg/s</li>\
+            </ul>'.format( self.max_left,self.max_right,self.cf_peak_load,self.cf_critical_load,self.cf_percent,self.rfd_left,self.rfd_right)               
               
         
     def check_for_timeout(self):
@@ -462,8 +496,19 @@ class CFT:
         
         
         if self.tindeq is None:
+            io_loop = tornado.ioloop.IOLoop.current()              
             io_loop.add_callback(connect, self)
+        # if self.tindeq is not None:
+        #     io_loop = tornado.ioloop.IOLoop.current()              
+        #     io_loop.add_callback(tare, self)               
 
+
+        # button_tare = Button(label="Tare")
+        # def button_tarefunc():
+        #         if self.tindeq is not None:
+        #             io_loop = tornado.ioloop.IOLoop.current()              
+        #             io_loop.add_callback(tare, self)               
+        # button_tare.on_click(button_tarefunc)
         
         button_max = Button(label="Maximum strength test")
         def maxi():
@@ -491,9 +536,23 @@ class CFT:
         def livedata():
                 self.layout.children.pop()
                 self.layout.children.pop()
-
                 self.make_document_live(doc)         
         button_live.on_click(livedata)
+
+        button_train = Button(label="Training")
+        def livedatatarget():
+                self.layout.children.pop()
+                self.layout.children.pop()
+                self.make_document_livetarget(doc)         
+        button_train.on_click(livedatatarget)
+
+
+        button_rfd = Button(label="Rate of force development (Contact strength)")
+        def butrfd():
+                self.layout.children.pop()
+                self.layout.children.pop()
+                self.make_document_rfd(doc)         
+        button_rfd.on_click(butrfd)
         
         button_quit = Button(label="Quit")
         def quitbut():
@@ -506,7 +565,7 @@ class CFT:
                        style={'font-size': '100%', 'color': 'black',                             
                               'text-align': 'center'})              
         
-        c = column(button_max,button_cft,button_send,button_live,button_quit,div_timeleft)
+        c = column(button_max,button_cft,button_rfd,button_send,button_live,button_train,button_quit,div_timeleft)
         self.layout=column(c,column() )
         doc.add_root(self.layout)
         self.doc=doc
@@ -517,7 +576,7 @@ class CFT:
 
         self.source = ColumnDataSource(data=dict(x=[], y=[]))
         fig = figure(title='Real-time Data', sizing_mode='stretch_both', x_axis_label='Seconds', y_axis_label='kg')
-        fig.line(x='x', y='y', source=self.source)
+        fig.line(x='x', y='y', source=self.source,line_width =2)
         doc.title = "Tindeq CFT"
         self.btn_go = Button(label='Waiting for Progressor...')
         self.btn_go.on_click(self.onclick_live)
@@ -578,14 +637,144 @@ class CFT:
         self.source.data=dict(x=[], y=[])
         io_loop = tornado.ioloop.IOLoop.current()
         io_loop.add_callback(start_tindeq_logging, self)
+###############
 
         
+    def make_document_livetarget(self, doc):
+        self.reset()        
+
+        self.source = ColumnDataSource(data=dict(x=[], y=[]))
+        self.fig = figure(title='Real-time Data', sizing_mode='stretch_both', x_axis_label='Seconds', y_axis_label='kg')
+        self.fig.line(x='x', y='y', source=self.source,line_width =2)
+        self.btn_go = Button(label='Waiting for Progressor...')
+        self.btn_go.on_click(self.onclick_livetarget)
+        
+        self.button_save = Button(label='Back to main menue')
+        self.div_load = Div(text='Load: ---',
+                       style={'font-size': '300%', 'color': 'black',                             
+                              'text-align': 'center'})       
+        
+        def mainmenue():
+                self.layout.children.pop()
+                self.layout.children.pop()
+                self.make_document_choice(doc)       
+                doc.remove_periodic_callback(self.calback_update_livetarget)
+                if self.tindeq is not None:
+                    io_loop = tornado.ioloop.IOLoop.current()              
+                    io_loop.add_callback(stop_tindeq_logging, self)
+
+        self.button_save.on_click(mainmenue)
+ 
+        div_instruct = Div(text='Turn on tindeq device using small black button',\
+                       style={'font-size': '100%', 'color': 'black',                             
+                              'text-align': 'left'})  
+            
+        self.spinner_on = Spinner(title="Pull time in s", low=1, step=1, value=10)
+        self.spinner_rest = Spinner(title="Rest time in s", low=1, step=1, value=6)
+        self.spinner_force = Spinner(title="Target force in kg", low=1, step=1, value=50)
+        self.spinner_reps = Spinner(title="Repetitions", low=1, step=1, value=10)
+        r1=row(self.spinner_on,self.spinner_rest,sizing_mode='scale_width')
+        r2=row(self.spinner_force,self.spinner_reps,sizing_mode='scale_width')
+        
+        # s=5
+        # dur =  self.spinner_on.value +  self.spinner_rest.value
+        # r=np.arange(self.spinner_reps.value)
+        # self.target_boxes= self.fig.quad(top=self.spinner_force.value+5, bottom=self.spinner_force.value-5, left=s+r*dur,
+        #            right=s+r*dur +self.spinner_on.value, color='red',alpha=0.5)        
+        self.source_targetbox= ColumnDataSource(data=dict(t=[], b=[], l=[], r=[]))
+        self.fig.quad(top='t', bottom='b', left='l', right='r', source=self.source_targetbox, color='red',alpha=0.5)        
+             
+        
+        widgets = column( div_instruct,r1,r2,self.btn_go , self.button_save,self.div_load,width=400 ) 
+        # first_row = row(widgets, fig)
+        
+        self.layout=row(widgets, self.fig)
+        doc.add_root(self.layout)
+
+        # self.fig = fig
+        self.calback_update_livetarget = doc.add_periodic_callback(self.update_livetarget, 25)
+        self.btn_go.disabled=True
+
+    def update_livetarget(self):      
+        
+        if self.tindeq is not None:
+                self.btn_go.disabled=False
+                self.btn_go.label = 'Start data stream'
+
+        self.source.stream({'x': self.xnew, 'y': self.ynew})       
+        
+
+        # self.fig.y_range.start=0           
+        # self.fig.y_range.end=self.spinner_force.value+10   
+        
+        # print(   self.source_targetbox.data)
+     
+        
+        # for r in range(self.spinner_reps.value):
+        #     dur =  self.spinner_on.value +  self.spinner_rest.value
+        #     self.fig.quad(top=self.spinner_force.value+5, bottom=self.spinner_force.value-5, left=s+r*dur,
+        #            right=s+r*dur +self.spinner_on.value, color='red',alpha=0.5)        
+        
+        x=   np.array( self.source.data['x'] ,dtype=float ) 
+        y=   np.array( self.source.data['y'] ,dtype=float ) 
+        s=5
+        dur =  self.spinner_on.value +  self.spinner_rest.value
+        r=np.arange(self.spinner_reps.value)      
+        tt= self.spinner_force.value+1 *np.ones(len(r)) 
+        bb=self.spinner_force.value-1 *np.ones(len(r))  
+        ll=s+r*dur
+        rr= s+r*dur+self.spinner_on.value
+        self.source_targetbox.data= dict(t=tt, b=bb, l=ll, r=rr)
+           
+        if len(x)>1:      
+            # ix_valid = x > (x.max()-30)        
+            self.source.data=dict(x=x, y= y)
+            self.div_load.text = 'Load: '+str( np.abs(np.round(y[-1],2)) )  +' kg'
+            # t=x[ix_valid]
+            # t[-1]=t[-1]+5
+            
+            # ix_box = ((rr>t[0]) & (ll<t[0]) ) | ( (ll<t[-1]) & (rr>t[-1])) | ( (ll>=t[0]) & (rr<=t[-1]) )
+            
+            # tt2=tt[ix_box]
+            # bb2=bb[ix_box]
+            # ll2=ll[ix_box]
+            # rr2=rr[ix_box]
+
+            # ll2[ll2<t[0]]=t[0]
+            # rr2[rr2>t[-1]]=t[-1]         
+                        
+            # self.source_targetbox.data= dict(t=tt2, b=bb2, l=ll2, r=rr2)
+            
+            # self.fig.x_range.start=t[0]            
+            # self.fig.x_range.end=t[-1]    
+            
+                  
+        self.reset()    
+        
+
+    def onclick_livetarget(self):
+        self.reset()        
+        self.source.data=dict(x=[], y=[])
+        io_loop = tornado.ioloop.IOLoop.current()
+        io_loop.add_callback(start_tindeq_logging, self)
+        
+        # s=1
+        # dur =  self.spinner_on.value +  self.spinner_rest.value
+        # r=np.arange(self.spinner_reps.value)      
+        # tt= self.spinner_force.value+5 *np.ones(len(r)) 
+        # bb=self.spinner_force.value-5 *np.ones(len(r))  
+        # ll=s+r*dur
+        # rr= s+r*dur+self.spinner_on.value
+        # self.source_targetbox.data= dict(t=tt, b=bb, l=ll, r=rr)
+        
+
+########        
     def make_document_max(self, doc):
         self.reset()        
 
         self.source = ColumnDataSource(data=dict(x=[], y=[]))
         fig = figure(title='Real-time Data', sizing_mode='stretch_both', x_axis_label='Seconds', y_axis_label='kg')
-        fig.line(x='x', y='y', source=self.source)
+        fig.line(x='x', y='y', source=self.source,line_width =2)
         doc.title = "Tindeq CFT"
         self.btn_left = Button(label='Waiting for Progressor...')
         self.btn_right = Button(label='Waiting for Progressor...')
@@ -718,7 +907,7 @@ class CFT:
         
         source = ColumnDataSource(data=dict(x=[], y=[]))
         fig = figure(title='Real-time Data', sizing_mode='stretch_both', x_axis_label='Seconds', y_axis_label='kg')
-        fig.line(x='x', y='y', source=source)
+        fig.line(x='x', y='y', source=source,line_width =2)
         doc.title = "Tindeq CFT"
         self.btn = Button(label='Waiting for Progressor...')
         button_save = Button(label='Save and back to main menue')
@@ -726,7 +915,8 @@ class CFT:
                 self.layout.children.pop()
                 self.layout.children.pop()
                 self.make_document_choice(doc)       
-                self.state== IdleState
+                self.state= IdleState
+                self.active=False 
                 doc.remove_periodic_callback(self.calback_update_cft)
                 if self.tindeq is not None:
                     io_loop = tornado.ioloop.IOLoop.current()              
@@ -747,9 +937,9 @@ class CFT:
                        style={'font-size': '100%', 'color': 'black',                             
                               'text-align': 'left'})
                 
-        duration_slider = Slider(start=5, end=30, value=25,
+        self.duration_slider = Slider(start=5, end=30, value=25,
                                  step=1, title="Reps")
-        self.laps = Div(text=f'Rep {0}/{duration_slider.value}',
+        self.laps = Div(text=f'Rep {0}/{self.duration_slider.value}',
                         style={'font-size': '400%', 'color': 'black',
                                'text-align': 'center'})
         self.div = Div(text='10:00',
@@ -761,18 +951,19 @@ class CFT:
                                       'text-align': 'left'})
 
         def onclick():
-            self.reps = duration_slider.value
-            self.duration = self.reps * 10
+            self.reps = self.duration_slider.value
+            self.duration = self.reps * 10 +10
             io_loop = tornado.ioloop.IOLoop.current()
             io_loop.add_callback(start_test_cft, self)
             self.reset()        
             self.source.data=dict(x=[], y=[])
+            
             io_loop.add_callback(start_tindeq_logging, self)            
 
         self.btn.on_click(onclick)
         self.btn.disabled=True
         
-        widgets = column(div_instruct,duration_slider, self.btn,button_save, self.laps, self.div,self.results_div)
+        widgets = column(div_instruct,self.duration_slider, self.btn,button_save, self.laps, self.div,self.results_div)
         self.layout = row(widgets, fig)
         doc.add_root(self.layout)
         self.source = source
@@ -780,59 +971,253 @@ class CFT:
         self.calback_update_cft = doc.add_periodic_callback(self.update_cft, 50)
         
 
+    def analyse_cft(self):
+            x = np.array(self.x)
+            y = np.array(self.y)        
+            
+            nlaps = (self.duration // 10) -1
+
+            # ix_lap= np.zeros(len(x))
+            
+            tmeans=[]
+            fmeans=[]
+            std_fmeans=[]
+            
+            for n in range(nlaps):
+                t1 = 10+n*10
+                t2=10+n*10+7             
+                ix = (x>=t1) & (x<=t2) & (y>3)
+                # ix_lap[ix]=n+1
+                
+                tmeans.append( np.mean(x[ix]) ) 
+                fmeans.append( np.median(y[ix]) ) 
+                iqr = np.percentile(y[ix],75) - np.percentile(y[ix],25)
+                std_fmeans.append( iqr/2 )                             
+                # print([t1,t2])
+            
+            tmeans=np.array(tmeans)
+            fmeans=np.array(fmeans)
+            std_fmeans=np.array(std_fmeans)
+            # breakpoint()
+            
+            self.cf_peak_load = np.max(fmeans)
+            imax=np.argmax(fmeans)
+            
+            self.cf_critical_load = np.nanmean(fmeans[-5:-1])
+            std_load_asymptote = np.nanstd(fmeans[-5:-1])
+            self.cf_x = x  
+            self.cf_y = y  
+            
+            msg= '<p>Peak force = {:.2f} +/- {:.2f} kg</p>'.format( fmeans[imax], std_fmeans[imax])
+            msg += '<p>Critical force = {:.2f} +/- {:.2f} kg</p>'.format(self.cf_critical_load, std_load_asymptote) 
+            msg += '<p>Critical force = {:.2f} % of peak force</p>'.format(100*self.cf_critical_load/fmeans[imax]) 
+            self.results_div.text = msg        
+
+            self.fig.circle(tmeans, fmeans, color='red', size=20, line_alpha=0)
+            # esource = ColumnDataSource(dict(x=tmeans, upper=fmeans+std_fmeans, lower=fmeans-std_fmeans))
+            # self.fig.add_layout(Whisker(source=esource, base='x', upper='upper', lower='lower', level='overlay'))    
 
     def update_cft(self):
         if self.test_done and not self.analysed:
-            self.btn.label = 'Test Complete'
+            # self.btn.label = 'Restart test'
             # np.savetxt('critical_force_test.txt', np.column_stack((self.x, self.y)))
-            x = np.array(self.x)
-            y = np.array(self.y)
-            
+        
             try:
-                results = analyse_data(x, y, 7, 3)
-                tmeans, fmeans, e_fmeans, msg, critical_load, load_asymptote, predicted_force = results
-                self.cf_peak_load = np.max(fmeans)
-                imax=np.argmax(fmeans)
-                
-                load_asymptote = np.nanmean(fmeans[-5:-1])
-                e_load_asymptote = np.nanstd(fmeans[-5:-1]) / np.sum(np.isfinite(fmeans[-5:-1]))
-                self.cf_critical_load =load_asymptote   
-                self.cf_x = x  
-                self.cf_y = y  
-
-                
-                msg= '<p>Peak force = {:.2f} +/- {:.2f} kg</p>'.format( fmeans[imax], e_fmeans[imax])
-                msg += '<p>Critical force = {:.2f} +/- {:.2f} kg</p>'.format(load_asymptote, e_load_asymptote) 
-                msg += '<p>Critical force = {:.2f} % of peak force</p>'.format(100*load_asymptote/fmeans[imax]) 
-                self.results_div.text = msg
-                # fill_src = ColumnDataSource(dict(x=tmeans, upper=predicted_force,
-                #                                  lower=load_asymptote*np.ones_like(tmeans)))
-                # self.fig.add_layout(
-                #     Band(base='x', lower='lower', upper='upper', source=fill_src, fill_alpha=0.7)
-                # )
-                self.fig.circle(tmeans, fmeans, color='red', size=5, line_alpha=0)
-                esource = ColumnDataSource(dict(x=tmeans, upper=fmeans+e_fmeans, lower=fmeans-e_fmeans))
-                self.fig.add_layout(Whisker(source=esource, base='x', upper='upper', lower='lower', level='overlay'))
+                self.analyse_cft()                         
             except Exception as e  :
                  print(e)
             self.analysed = True
         else:
-            if self.tindeq is not None:
+            if (self.tindeq is not None) & (self.active==False):
                 self.btn.disabled=False
                 self.btn.label = 'Start Test'
+            if self.active==True:
+                self.btn.disabled=True
+
             self.state.update_cft(self)
             self.source.stream({'x': self.xnew, 'y': self.ynew})
-            nlaps = self.duration // 10
-            self.laps.text = f"Rep {1 + nlaps - self.reps}/{nlaps}"
+            nlaps = self.duration_slider.value
+            if self.active==False:
+                self.laps.text = f"Rep 0/{nlaps}"
+            else:
+                self.laps.text = f"Rep { 1 + nlaps - self.reps}/{nlaps}"
             self.reset()
+##########
+
+    def make_document_rfd(self, doc):
+        self.reset()        
+
+        self.source = ColumnDataSource(data=dict(x=[], y=[]))
+        fig = figure(title='Real-time Data', sizing_mode='stretch_both', x_axis_label='Seconds', y_axis_label='kg')
+        fig.line(x='x', y='y', source=self.source,line_width =2)
+        
+        self.source_rfd = ColumnDataSource(data=dict(x=[], y=[]))
+        fig.line(x='a', y='b', source=self.source_rfd,line_width =2,color='red')
+
+        doc.title = "Tindeq CFT"
+        self.btn_left = Button(label='Waiting for Progressor...')
+        self.btn_right = Button(label='Waiting for Progressor...')
+        # button_reset = Button(label='Reset')
+
+        
+        div_instruct = Div(text='<strong>Instructions:</strong> <br>\
+                                <ul>\
+                                  <li>Turn on tindeq device (small black button)</li>\
+                                  <li>Pull as fast as you can on 20mm edge!</li>\
+                                  <li>Each tests runs for 10s</li>\
+                                </ul>',
+                       style={'font-size': '100%', 'color': 'black',                             
+                              'text-align': 'left'})
+        
+        
+        self.div_lh = Div(text='RFD Left hand: ---',
+                       style={'font-size': '150%', 'color': 'black',                             
+                              'text-align': 'center'})
+        self.div_rh = Div(text='RFD Right hand: ---',
+                       style={'font-size': '150%', 'color': 'black',                             
+                              'text-align': 'center'})
+        
+
+        self.btn_left.on_click(self.onclick_left_rdf)
+        self.btn_right.on_click(self.onclick_right_rdf)
+        
+        self.button_save = Button(label='Save and back to main menue')
+        def mainmenue():
+                self.layout.children.pop()
+                self.layout.children.pop()
+                self.make_document_choice(doc)       
+                doc.remove_periodic_callback(self.calback_update_max)
+                if self.tindeq is not None:
+                    io_loop = tornado.ioloop.IOLoop.current()              
+                    io_loop.add_callback(stop_tindeq_logging, self)
+        self.button_save.on_click(mainmenue)
+        
+        
+        widgets = column( div_instruct,self.btn_left ,self.div_lh,self.btn_right,self.div_rh, self.button_save,width=400 ) 
+        # first_row = row(widgets, fig)
+        
+        self.layout=row(widgets, fig)
+        doc.add_root(self.layout)
 
 
+        self.fig = fig
+
+        self.calback_update_max = doc.add_periodic_callback(self.update_rfd, 50)
+
+        self.btn_right.disabled=True
+        self.btn_left.disabled=True
+        # self.button_save.disabled=True        
+        self.rfd_right_done=False
+        self.rfd_left_done=False
+
+    def onclick_left_rdf(self):
+        self.duration = 10
+        self.source.data=dict(x=[], y=[])
+        self.maxtest_left=True
+        self.maxtest_right=False
+        def sctn():  
+            self.maxtest_left=False 
+            self.rfd_left_done=True
+        s = threading.Timer(self.duration, sctn)  
+        s.start()  
+        io_loop = tornado.ioloop.IOLoop.current()
+        io_loop.add_callback(start_test_max, self)
+
+    def onclick_right_rdf(self):
+        self.duration = 10
+        self.source.data=dict(x=[], y=[])
+        self.maxtest_right=True
+        self.maxtest_left=False
+        # self.btn_right.disabled=True
+        # self.btn_left.disabled=True
+
+        def sctn():  
+            self.maxtest_right=False 
+            self.rfd_right_done=True
+
+        s = threading.Timer(self.duration, sctn  )
+        s.start()  
+        io_loop = tornado.ioloop.IOLoop.current()
+        io_loop.add_callback(start_test_max, self)
+
+
+    def update_rfd(self):    
+        
+            self.source.stream({'x': self.xnew, 'y': self.ynew})
+            
+            if (len( self.source.data['y'] )>1) & (self.maxtest_right):
+                # self.max_right= np.round( np.max( np.array( self.source.data['y'] ,dtype=float ) ),2)
+                self.btn_right.disabled=True
+                self.btn_left.disabled=True
+            #     self.button_save.disabled=True
+
+
+            if (len( self.source.data['y'] )>1) & (self.maxtest_left):
+                # self.max_left= np.round( np.max( np.array( self.source.data['y'] ,dtype=float ) ),2)
+                self.btn_right.disabled=True
+                self.btn_left.disabled=True
+            #     self.button_save.disabled=True
+                
+            if (self.maxtest_right==False) & (self.maxtest_left==False) & (self.tindeq is not None):      
+                self.btn_right.disabled=False
+                self.btn_left.disabled=False
+                self.button_save.disabled=False
+                self.btn_right.label = 'Start right hand test'
+                self.btn_left.label = 'Start left hand test'
+                
+            if self.rfd_left_done:
+                x=np.array( self.source.data['x'])
+                y=np.array(self.source.data['y'])
+                            
+                ymax=np.max(y)
+                f80=(ymax*0.8)
+                f20=(ymax*0.2)
+
+                ix= np.where( y>f80 )[0]                
+                t80 = x[ix[0]]
+                ix= np.where( y>f20)[0]                
+                t20 = x[ix[0]]  
+                f=(f80-f20)
+                t= t80-t20
+                
+                self.rfd_left= np.round(f/t,2)
+                self.div_lh.text = 'RFD (20%-80%) Left hand: '+str( self.rfd_left )  +' kg/s'               
+                self.source_rfd.data=dict(a=[t20,t80],b=[f20,f80])
+
+            if self.rfd_right_done:
+                x=np.array( self.source.data['x'])
+                y=np.array(self.source.data['y'])
+                            
+                ymax=np.max(y)
+                f80=(ymax*0.8)
+                f20=(ymax*0.2)
+
+                ix= np.where( y>f80 )[0]                
+                t80 = x[ix[0]]
+                ix= np.where( y>f20)[0]                
+                t20 = x[ix[0]]  
+                f=(f80-f20)
+                t= t80-t20
+                
+                self.rfd_right= np.round(f/t,2)
+                self.div_rh.text = 'RFD (20%-80%) Right hand: '+str( self.rfd_right )  +' kg/s'               
+                self.source_rfd.data=dict(a=[t20,t80],b=[f20,f80])
+               
+            
+            # nlaps = self.duration // 10
+            # self.laps.text = f"Rep {1 + nlaps - self.reps}/{nlaps}"
+            self.reset()
+            
+            
+###################################
 async def connect(cft):
     tindeq = TindeqProgressor(cft)
     await tindeq.connect()
     cft.tindeq = tindeq
-    await cft.tindeq.soft_tare()
-    await asyncio.sleep(1)
+    await cft.tindeq.tare()
+    print('TARE')
+    # await cft.tindeq.soft_tare()
+    await asyncio.sleep(2)
 
 
 async def start_test_max(cft):
@@ -866,18 +1251,26 @@ async def start_test_cft(cft):
 
         print('Test starts!')
         cft.state.end(cft)
-        # cft.active = True
-        await asyncio.sleep(cft.duration)
-        await cft.tindeq.stop_logging_weight()
+        cft.active = True
+        await asyncio.sleep(cft.duration-3)
         cft.test_done = True
-        await asyncio.sleep(0.5)
         cft.state = IdleState
+        await asyncio.sleep(1)
+        await cft.tindeq.stop_logging_weight()
+        cft.active = False
+
     except Exception as err:
         print(str(err))
     # finally:
     #     await cft.tindeq.disconnect()
     #     cft.tindeq = None
     
+async def tare(cft):
+    try:
+        await cft.tindeq.tare()
+        print('TARE')
+    except Exception as err:
+        print(str(err))
     
 
 async def start_tindeq_logging(cft):
@@ -893,7 +1286,7 @@ async def stop_tindeq_logging(cft):
         await cft.tindeq.stop_logging_weight()
         # await asyncio.sleep(0.5)
         print('Logging stops!')
-        cft.active = True       
+        cft.active = False       
     except Exception as err:
         print(str(err))
         
