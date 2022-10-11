@@ -20,6 +20,7 @@ import time
 
 from tornado.web import StaticFileHandler
 
+from datetime import date
 
 import pandas as pd
 import glob
@@ -34,6 +35,7 @@ from bokeh.layouts import row, column
 from bokeh.models import Button, Slider, Div, Band, Whisker, Spinner, DataTable,TableColumn,DateFormatter
 
 from bokeh.models import Button, CustomJS, PasswordInput, PreText, TextInput
+from bokeh.io import export_png
 
 from playsound import playsound
 import threading
@@ -244,21 +246,34 @@ class CFT:
         self.make_login(doc)
         
     def make_document_email(self, doc):
-        now = pd.to_datetime("today").date()
+        now = pd.to_datetime(date.today())
+        # now = date.today()
+
      
-        # df_results=pd.DataFrame(columns=['datetime','max_left','max_right','peak_force','critical_force','rfd_left','rfd_right'])
-        # df_results=df_results.append( {'datetime':now,'max_left':self.max_left,'max_right':self.max_right,'peak_force':self.cf_peak_load,'critical_force':self.cf_critical_load,'rfd_left':self.rfd_left,'rfd_right':self.rfd_right},ignore_index=True )
+        self.df=pd.DataFrame(columns=['datetime','Max strength left in kg','Max strength right in kg','Peak force in kg','Critical force in kg','RFD left in kg/s','RFD right in kg/s'])
+        self.df.loc[0]=[now,self.max_left,self.max_right,self.cf_peak_load,self.cf_critical_load,self.rfd_left,self.rfd_right]
+        self.df=self.df.replace(0,np.nan)
+   
+    
+        # df=pd.DataFrame()
+        # df['datetime']=now
+        # df['max_left']=self.max_left
+        # df['max_right']=self.max_right
+        # df['peak_force']=self.cf_peak_load
+        # df['max_left']=self.cf_critical_load
+        # df['rfd_left']=self.rfd_left
+        # df['rfd_right']=self.rfd_right
         
-        # Columns = [TableColumn(field=Ci, title=Ci) for Ci in df_results.columns] # bokeh columns
-
-
-        
-        # self.source_results=ColumnDataSource(df_results)
-
-        # self.data_table = DataTable(columns=Columns,source=self.source_results, width=400, height=200)
+        Columns =[ TableColumn(field="datetime", title="Date", formatter=DateFormatter())]
+        Columns= Columns + [TableColumn(field=Ci, title=Ci) for Ci in self.df.columns[1::]] # bokeh columns
 
         
-        self.div_results = Div(text='',style={'font-size': '150%', 'color': 'black',                             
+        self.source_results=ColumnDataSource(self.df)
+
+        self.data_table = DataTable(columns=Columns,source=self.source_results,index_position=None,height=100,auto_edit=True,sizing_mode='stretch_width')
+
+        
+        self.div_results = Div(text='',style={'font-size': '100%', 'color': 'black',                             
                               'text-align': 'left'})
         self.cf_percent=0
 
@@ -266,22 +281,31 @@ class CFT:
         # self.resultsource = ColumnDataSource(data=dict(x=self.cf_x, y=self.cf_y))
         # fig = figure( sizing_mode='stretch_both', x_axis_label='Seconds', y_axis_label='kg')
         # fig.line(x='x', y='y', source=self.resultsource)
-        self.resultsource = ColumnDataSource(data=dict([]))
-        fig1 = figure( title='Max. Strength',sizing_mode='stretch_both', y_axis_label='kg',x_axis_type='datetime')
-        fig1.line(x='datetime', y='max_left', source=self.resultsource,color='red',legend_label="left")
-        fig1.circle(x='datetime', y='max_left', source=self.resultsource,color='red')
-        fig1.line(x='datetime', y='max_right', source=self.resultsource,color='blue',legend_label="right")
-        fig1.circle(x='datetime', y='max_right', source=self.resultsource,color='blue')
+        # self.resultsource = ColumnDataSource(data=dict([]))
+        
+        TOOLTIPS = [("Value", "$y")]
+        
+        fig1 = figure( title='Max. Strength',sizing_mode='stretch_both', y_axis_label='kg',x_axis_type='datetime',tooltips=TOOLTIPS)
+        fig1.line(x='datetime', y='Max strength left in kg', source=self.source_results,color='red',legend_label="left")
+        fig1.circle(x='datetime', y='Max strength left in kg', source=self.source_results,color='red',size=20)
+        fig1.line(x='datetime', y='Max strength right in kg', source=self.source_results,color='blue',legend_label="right")
+        fig1.circle(x='datetime', y='Max strength right in kg', source=self.source_results,color='blue',size=20)
         fig1.legend.location = "top_left"
 
-        fig2 = figure( title='Peak force',sizing_mode='stretch_both', y_axis_label='kg',x_axis_type='datetime')
-        fig2.line(x='datetime', y='peak_force', source=self.resultsource,color='red')
-        fig2.circle(x='datetime', y='peak_force', source=self.resultsource,color='red')
+        fig2 = figure( title='Peak force',sizing_mode='stretch_both', y_axis_label='kg',x_axis_type='datetime',tooltips=TOOLTIPS)
+        fig2.line(x='datetime', y='Peak force in kg', source=self.source_results,color='red')
+        fig2.circle(x='datetime', y='Peak force in kg', source=self.source_results,color='red',size=20)
 
-        fig3 = figure( title='Critical force',sizing_mode='stretch_both', y_axis_label='kg',x_axis_type='datetime')
-        fig3.line(x='datetime', y='critical_force', source=self.resultsource,color='red')
-        fig3.circle(x='datetime', y='critical_force', source=self.resultsource,color='red')        
-                
+        fig3 = figure( title='Critical force',sizing_mode='stretch_both', y_axis_label='kg',x_axis_type='datetime',tooltips=TOOLTIPS)
+        fig3.line(x='datetime', y='Critical force in kg', source=self.source_results,color='red')
+        fig3.circle(x='datetime', y='Critical force in kg', source=self.source_results,color='red',size=20)      
+ 
+        fig4 = figure( title='Rate of force developmendt (RFD)',sizing_mode='stretch_both', y_axis_label='kg per s',x_axis_type='datetime',tooltips=TOOLTIPS)
+        fig4.line(x='datetime', y='RFD left in kg/s', source=self.source_results,color='red',legend_label="left")
+        fig4.circle(x='datetime', y='RFD left in kg/s', source=self.source_results,color='red',size=20)
+        fig4.line(x='datetime', y='RFD right in kg/s', source=self.source_results,color='blue',legend_label="right")
+        fig4.circle(x='datetime', y='RFD right in kg/s', source=self.source_results,color='blue',size=20)
+        fig4.legend.location = "top_left"               
             
         self.text_input_mail = TextInput(value="", title="E-mail:")
 
@@ -293,37 +317,31 @@ class CFT:
               df_cf['seconds']=self.cf_x
               df_cf['kg']=self.cf_y
               df_cf.to_csv( email + '_cf.csv' )
-                
-              resultfiles = glob.glob('*_results.csv')  
-              if email + '_results.csv' in   resultfiles:
-                df_results = pd.read_csv(  email + '_results.csv',index_col=0 )
-              else:                   
-                df_results=pd.DataFrame(columns=['datetime','max_left','max_right','peak_force','critical_force'])
-              df_results=df_results.append( {'datetime':now,'max_left':self.max_left,'max_right':self.max_right,'peak_force':self.cf_peak_load,'critical_force':self.cf_critical_load},ignore_index=True )
-              df_results=df_results.drop_duplicates()
-              df_results.to_csv( email + '_results.csv' )
+              
+              df_mail = pd.DataFrame( self.source_results.data )
+              df_mail.iloc[:,1::].to_csv( email + '_results.csv' )
                 
                 # print(text_input_mail.value)
         self.be1.on_click(save_data)
         
-        self.be2 = Button(label='Compare to previous tests')
-        def retrive_data():
-            email = self.text_input_mail.value
-            if len(email)>2 & ('@' in email):
-                # save_data()
+        # self.be2 = Button(label='Compare to previous tests')
+        # def retrive_data():
+        #     email = self.text_input_mail.value
+        #     if len(email)>2 & ('@' in email):
+        #         # save_data()
                 
-                resultfiles = glob.glob('*_results.csv')  
-                if email + '_results.csv' in   resultfiles:                     
-                    df_results = pd.read_csv(  email + '_results.csv',index_col=0 )
-                    df_results['datetime'] = pd.to_datetime( df_results['datetime'] )         
-                    df_results=df_results.append( {'datetime':now,'max_left':self.max_left,'max_right':self.max_right,'peak_force':self.cf_peak_load,'critical_force':self.cf_critical_load},ignore_index=True )
-                    df_results=df_results.replace(0,np.nan)
-                    df_results=df_results.drop_duplicates()
+        #         resultfiles = glob.glob('*_results.csv')  
+        #         if email + '_results.csv' in   resultfiles:                     
+        #             df_results = pd.read_csv(  email + '_results.csv',index_col=0 )
+        #             df_results['datetime'] = pd.to_datetime( df_results['datetime'] )         
+        #             df_results=df_results.append( {'datetime':now,'max_left':self.max_left,'max_right':self.max_right,'peak_force':self.cf_peak_load,'critical_force':self.cf_critical_load,'rfd_left':self.rfd_left,'rfd_right':self.rfd_right},ignore_index=True )
+        #             df_results=df_results.replace(0,np.nan)
+        #             df_results=df_results.drop_duplicates()
 
-                    self.resultsource.data = df_results
+        #             self.resultsource.data = df_results
 
-                # print(text_input_mail.value)
-        self.be2.on_click(retrive_data)
+        #         # print(text_input_mail.value)
+        # self.be2.on_click(retrive_data)
         
         self.be3 = Button(label='Send results to e-mail')
         def sendmail():
@@ -390,7 +408,7 @@ class CFT:
                     
         self.be3.on_click(sendmail)       
         
-        self.text_input_bw = TextInput(value="", title="Enter body weight in kg to convert to % body weight")
+        self.text_input_bw = TextInput(value="", title="Enter body weight in kg to convert to %")
 
         
         self.be4 = Button(label="Back to main menue")
@@ -402,10 +420,10 @@ class CFT:
 
         self.be4.on_click(back)
  
-        widgets = column( self.div_results,self.text_input_mail,self.be1,self.be2,self.be3,self.be4,self.text_input_bw ,width=400 ) 
-        first_row = row(fig1,fig2,fig3)
+        widgets = column( self.text_input_mail,self.be1,self.be3,self.be4,self.text_input_bw,self.div_results ,width=400 ) 
+        first_row = column(self.data_table,row(fig1,fig4,sizing_mode='stretch_both'),row(fig2,fig3,sizing_mode='stretch_both'),sizing_mode='stretch_both')
         
-        self.layout=row(widgets, first_row)
+        self.layout=row(widgets, first_row,sizing_mode='stretch_height')
         doc.add_root(self.layout)
         
         doc.add_root(self.layout)
@@ -416,15 +434,44 @@ class CFT:
           if self.cf_peak_load>0:          
               self.cf_percent=(self.cf_critical_load/self.cf_peak_load)*100
           
+
+   
           email = self.text_input_mail.value
           if len(email)>2 & ('@' in email) :          
                 self.be1.disabled = False
-                self.be2.disabled = False
+                # self.be2.disabled = False
                 self.be3.disabled = False
+                
+                try:
+                    resultfiles = glob.glob('*_results.csv')  
+                    if email + '_results.csv' in   resultfiles:                     
+                        df_old = pd.read_csv(  email + '_results.csv',index_col=0 )
+                        df_old['datetime'] = pd.to_datetime( df_old['datetime'] ) 
+                        df_new=pd.concat([self.df,df_old])
+                        
+                        # print(df_new)
+                        
+                        # self.df.loc[0 if pd.isnull(self.df.index.max()) else self.df.index.max() + 1]=[self.max_left,self.max_right,self.cf_peak_load,self.cf_critical_load,self.rfd_left,self.rfd_right]
+
+                        # df_results=df_results.append( {'datetime':now,'max_left':self.max_left,'max_right':self.max_right,'peak_force':self.cf_peak_load,'critical_force':self.cf_critical_load,'rfd_left':self.rfd_left,'rfd_right':self.rfd_right},ignore_index=True )
+                        df_new=df_new.replace(0,np.nan)
+                        df_new=df_new.drop_duplicates()
+    
+                        self.source_results.data = df_new
+                    else:
+                        self.source_results.data = self.df
+
+                except:
+                    pass
+                
           else:
                 self.be1.disabled = True
-                self.be2.disabled = True
+                # self.be2.disabled = True
                 self.be3.disabled = True
+                self.source_results.data = self.df
+
+                
+                
           try:
               bw=float(self.text_input_bw.value)
               cf=self.cf_critical_load
@@ -455,7 +502,9 @@ class CFT:
     <li>RFD left: {:.2f} % kg/s</li>\
     <li>RFD right: {:.2f} % kg/s</li>\
     '.format( (self.max_left/bw)*100,(self.max_right/bw)*100,(self.cf_peak_load/bw)*100,(self.cf_critical_load/bw)*100,self.cf_percent,self.rfd_left,self.rfd_right) +\
-        '<li>Predicted redpoint grade (french sport): '+french_grades[gmin] +' - '+ french_grades[gmax]+'</li></ul>'
+    '<li>Predicted redpoint grade (french sport): '+french_grades[gmin] +' - '+ french_grades[gmax]+'</li></ul>'
+    
+   
               else:              
                   self.div_results.text='<strong>Results:</strong> <br>\
     <ul>\
@@ -463,9 +512,9 @@ class CFT:
     <li>Max. strength right hand: {:.2f} % BW</li>\
     <li>Peak force: {:.2f} % BW</li>\
     <li>Critical force: {:.2f} % BW</li>\
-    <li>Critical force: {:.2f} % of peak force</li\
+    <li>Critical force: {:.2f} % of peak force</li>\
     <li>RFD left: {:.2f} % kg/s</li>\
-    <li>RFD right: {:.2f} % kg/s</li>></ul>\
+    <li>RFD right: {:.2f} % kg/s</li></ul>\
     '.format( (self.max_left/bw)*100,(self.max_right/bw)*100,(self.cf_peak_load/bw)*100,(self.cf_critical_load/bw)*100,self.cf_percent,self.rfd_left,self.rfd_right) 
               
           except:          
@@ -644,8 +693,12 @@ class CFT:
         self.reset()        
 
         self.source = ColumnDataSource(data=dict(x=[], y=[]))
+        self.source_end = ColumnDataSource(data=dict(x=[], y=[]))
+
         self.fig = figure(title='Real-time Data', sizing_mode='stretch_both', x_axis_label='Seconds', y_axis_label='kg')
         self.fig.line(x='x', y='y', source=self.source,line_width =2)
+        self.fig.line(x='x', y='y', source=self.source_end,line_width =1,line_color='black',line_dash='dashed')
+       
         self.btn_go = Button(label='Waiting for Progressor...')
         self.btn_go.on_click(self.onclick_livetarget)
         
@@ -658,10 +711,10 @@ class CFT:
                 self.layout.children.pop()
                 self.layout.children.pop()
                 self.make_document_choice(doc)       
-                doc.remove_periodic_callback(self.calback_update_livetarget)
                 if self.tindeq is not None:
                     io_loop = tornado.ioloop.IOLoop.current()              
                     io_loop.add_callback(stop_tindeq_logging, self)
+                    doc.remove_periodic_callback(self.calback_update_livetarget)
 
         self.button_save.on_click(mainmenue)
  
@@ -692,7 +745,7 @@ class CFT:
         doc.add_root(self.layout)
 
         # self.fig = fig
-        self.calback_update_livetarget = doc.add_periodic_callback(self.update_livetarget, 25)
+        self.calback_update_livetarget = doc.add_periodic_callback(self.update_livetarget, 10)
         self.btn_go.disabled=True
 
     def update_livetarget(self):      
@@ -702,7 +755,7 @@ class CFT:
                 self.btn_go.label = 'Start data stream'
 
         self.source.stream({'x': self.xnew, 'y': self.ynew})       
-        
+
 
         # self.fig.y_range.start=0           
         # self.fig.y_range.end=self.spinner_force.value+10   
@@ -717,6 +770,7 @@ class CFT:
         
         x=   np.array( self.source.data['x'] ,dtype=float ) 
         y=   np.array( self.source.data['y'] ,dtype=float ) 
+                     
         s=5
         dur =  self.spinner_on.value +  self.spinner_rest.value
         r=np.arange(self.spinner_reps.value)      
@@ -726,9 +780,11 @@ class CFT:
         rr= s+r*dur+self.spinner_on.value
         self.source_targetbox.data= dict(t=tt, b=bb, l=ll, r=rr)
            
-        if len(x)>1:      
+        if len(x)>1:   
+            self.source_end.data={'x': [np.max(x),np.max(x)], 'y': [0,self.spinner_force.value+1]}       
+
             # ix_valid = x > (x.max()-30)        
-            self.source.data=dict(x=x, y= y)
+            # self.source.data=dict(x=x, y= y)
             self.div_load.text = 'Load: '+str( np.abs(np.round(y[-1],2)) )  +' kg'
             # t=x[ix_valid]
             # t[-1]=t[-1]+5
@@ -1014,6 +1070,8 @@ class CFT:
             self.results_div.text = msg        
 
             self.fig.circle(tmeans, fmeans, color='red', size=20, line_alpha=0)
+            
+
             # esource = ColumnDataSource(dict(x=tmeans, upper=fmeans+std_fmeans, lower=fmeans-std_fmeans))
             # self.fig.add_layout(Whisker(source=esource, base='x', upper='upper', lower='lower', level='overlay'))    
 
@@ -1021,7 +1079,10 @@ class CFT:
         if self.test_done and not self.analysed:
             # self.btn.label = 'Restart test'
             # np.savetxt('critical_force_test.txt', np.column_stack((self.x, self.y)))
-        
+            try:
+                  export_png(self.fig, filename="critical_force_test.png")
+            except Exception as e  :
+                  print(e)        
             try:
                 self.analyse_cft()                         
             except Exception as e  :
