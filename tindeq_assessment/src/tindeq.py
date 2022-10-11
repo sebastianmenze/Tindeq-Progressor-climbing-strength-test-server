@@ -164,6 +164,10 @@ class TindeqProgressor(object):
         self.last_cmd = None
         await self._send_cmd('STOP_WEIGHT_MEAS')
 
+    async def tare(self):
+        self.last_cmd = None
+        await self._send_cmd('TARE_SCALE')
+        
     async def sleep(self):
         self.last_cmd = None
         await self._send_cmd('SLEEP')
