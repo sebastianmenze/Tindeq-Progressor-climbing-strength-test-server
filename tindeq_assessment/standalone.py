@@ -1354,13 +1354,13 @@ async def stop_tindeq_logging(cft):
 cft = CFT()
 cft.make_gui(curdoc())
 
-# apps = {'/': Application(FunctionHandler(cft.make_gui))}
-# server = Server(apps, port=5000 )
-# server.start()
+apps = {'/': Application(FunctionHandler(cft.make_gui))}
+server = Server(apps, port=5000 )
+server.start()
 
-# if __name__ == "__main__":
-tornado.platform.asyncio.AsyncIOMainLoop().install()
-io_loop = tornado.ioloop.IOLoop.current()
-# print('Opening Bokeh application on http://localhost:5006/')
-# io_loop.add_callback(server.show, "/")
-io_loop.start()
+if __name__ == "__main__":
+    tornado.platform.asyncio.AsyncIOMainLoop().install()
+    io_loop = tornado.ioloop.IOLoop.current()
+    print('Opening Bokeh application on http://localhost:5006/')
+    io_loop.add_callback(server.show, "/")
+    io_loop.start()
