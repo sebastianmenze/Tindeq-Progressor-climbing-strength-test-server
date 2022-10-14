@@ -1210,6 +1210,8 @@ class CFT:
                 # self.max_right= np.round( np.max( np.array( self.source.data['y'] ,dtype=float ) ),2)
                 self.btn_right.disabled=True
                 self.btn_left.disabled=True
+                # self.source_rfd = ColumnDataSource(data=dict(x=[], y=[]))
+
             #     self.button_save.disabled=True
 
 
@@ -1217,6 +1219,8 @@ class CFT:
                 # self.max_left= np.round( np.max( np.array( self.source.data['y'] ,dtype=float ) ),2)
                 self.btn_right.disabled=True
                 self.btn_left.disabled=True
+                # self.source_rfd = ColumnDataSource(data=dict(x=[], y=[]))
+
             #     self.button_save.disabled=True
                 
             if (self.maxtest_right==False) & (self.maxtest_left==False) & (self.tindeq is not None):      
@@ -1226,7 +1230,7 @@ class CFT:
                 self.btn_right.label = 'Start right hand test'
                 self.btn_left.label = 'Start left hand test'
                 
-            if self.rfd_left_done:
+            if self.rfd_left_done & (self.maxtest_right==False):
                 x=np.array( self.source.data['x'])
                 y=np.array(self.source.data['y'])
                             
@@ -1244,8 +1248,9 @@ class CFT:
                 self.rfd_left= np.round(f/t,2)
                 self.div_lh.text = 'RFD (20%-80%) Left hand: '+str( self.rfd_left )  +' kg/s'               
                 self.source_rfd.data=dict(a=[t20,t80],b=[f20,f80])
+                self.rfd_left_done=False
 
-            if self.rfd_right_done:
+            if self.rfd_right_done & (self.maxtest_left==False):
                 x=np.array( self.source.data['x'])
                 y=np.array(self.source.data['y'])
                             
@@ -1263,6 +1268,7 @@ class CFT:
                 self.rfd_right= np.round(f/t,2)
                 self.div_rh.text = 'RFD (20%-80%) Right hand: '+str( self.rfd_right )  +' kg/s'               
                 self.source_rfd.data=dict(a=[t20,t80],b=[f20,f80])
+                self.rfd_right_done=False
                
             
             # nlaps = self.duration // 10
