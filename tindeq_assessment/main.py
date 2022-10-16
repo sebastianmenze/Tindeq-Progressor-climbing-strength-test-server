@@ -701,6 +701,9 @@ class CFT:
        
         self.btn_go = Button(label='Waiting for Progressor...')
         self.btn_go.on_click(self.onclick_livetarget)
+
+        self.btn_stop = Button(label='Stop and reset')
+        self.btn_stop.on_click(self.onclick_stop)
         
         self.button_save = Button(label='Back to main menue')
         self.div_load = Div(text='Load: ---',
@@ -738,7 +741,7 @@ class CFT:
         self.fig.quad(top='t', bottom='b', left='l', right='r', source=self.source_targetbox, color='red',alpha=0.5)        
              
         
-        widgets = column( div_instruct,r1,r2,self.btn_go , self.button_save,self.div_load,width=400 ) 
+        widgets = column( div_instruct,r1,r2,self.btn_go ,  self.btn_stop,self.button_save,self.div_load,width=400 ) 
         # first_row = row(widgets, fig)
         
         self.layout=row(widgets, self.fig)
@@ -774,8 +777,8 @@ class CFT:
         s=5
         dur =  self.spinner_on.value +  self.spinner_rest.value
         r=np.arange(self.spinner_reps.value)      
-        tt= self.spinner_force.value+1 *np.ones(len(r)) 
-        bb=self.spinner_force.value-1 *np.ones(len(r))  
+        tt= self.spinner_force.value+2 *np.ones(len(r)) 
+        bb=self.spinner_force.value-2 *np.ones(len(r))  
         ll=s+r*dur
         rr= s+r*dur+self.spinner_on.value
         self.source_targetbox.data= dict(t=tt, b=bb, l=ll, r=rr)
@@ -808,9 +811,19 @@ class CFT:
         self.reset()    
         
 
+    def onclick_stop(self):
+        io_loop = tornado.ioloop.IOLoop.current()
+        io_loop.add_callback(stop_tindeq_logging, self)
+        self.reset()        
+        self.source.data=dict(x=[], y=[])
+        self.source_end.data=dict(x=[], y=[])     
+
+        
     def onclick_livetarget(self):
         self.reset()        
         self.source.data=dict(x=[], y=[])
+        self.source_end.data=dict(x=[], y=[])     
+
         io_loop = tornado.ioloop.IOLoop.current()
         io_loop.add_callback(start_tindeq_logging, self)
         
