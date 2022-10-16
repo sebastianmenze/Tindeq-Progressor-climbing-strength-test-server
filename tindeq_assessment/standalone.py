@@ -475,12 +475,36 @@ class CFT:
           try:
               bw=float(self.text_input_bw.value)
               cf=self.cf_critical_load
+
+              french_grades={1:'1',2:'2',3:'2+',4:'3-',5:'3',6:'3+',7:'4',8:'4+',9:'5',10:'5+',11:'6a',12:'6a+',13:'6b',14:'6b+',15:'6c',16:'6c+',17:'7a',18:'7a+',19:'7b',20:'7b+',21:'7c',22:'7c+',23:'8a',24:'8a+',25:'8b',26:'8b+',27:'8c',28:'8c+',29:'9a',30:'9a+'}
               
+              prediction='<strong>Predicted redpoint grades (french sport):</strong><br><ul>'
+              prediction+= '<li>If one predictor is far below the others, you might improve by focusing training here</li>'
+              prediction+= '<li>If predictions are far below your real redpoint level, you might improve by focusing on techniqe and mental traning</li>'
+              
+              if self.max_right + self.max_left >0: 
+                   maxxx=np.array( [self.max_right,self.max_left] )
+                   max_onehand=np.mean( maxxx[maxxx>0] )
+                   kg=max_onehand *2 -bw
+                   irca = (kg*9.81 + 59.9 )/ 28.5 
+                   gmin=np.round(irca)-1
+                   gmax=np.round(irca)+1
+                   # gmin = (kg*9.81 + 50 )/ 29
+                   # gmax = (kg*9.81 + 70 )/ 28 
+                   if gmin < 1:
+                       gmin=1
+                   if gmax > 30:
+                       gmax=30
+                   if gmax < 1:
+                       gmax=1
+                   if gmin > 30:
+                       gmin=30
+                   prediction+= '<li>Max. strength: '+french_grades[gmin] +' - '+ french_grades[gmax]+'</li>'
+                                              
               if cf>0:        
                   # irca = cf/bw* 100*0.3 + 6
-                  french_grades={1:'1',2:'2',3:'2+',4:'3-',5:'3',6:'3+',7:'4',8:'4+',9:'5',10:'5+',11:'6a',12:'6a+',13:'6b',14:'6b+',15:'6c',16:'6c+',17:'7a',18:'7a+',19:'7b',20:'7b+',21:'7c',22:'7c+',23:'8a',24:'8a+',25:'8b',26:'8b+',27:'8c',28:'8c+',29:'9a',30:'9a+'}
-                  gmin= int(cf/bw*100 *0.25 + 6 )
-                  gmax= int(cf/bw*100 *0.35 + 6 )        
+                  gmin= np.round(cf/bw*100 *0.25 + 6 )
+                  gmax= np.round(cf/bw*100 *0.35 + 6 )        
                   if gmin < 1:
                       gmin=1
                   if gmax > 30:
@@ -491,8 +515,28 @@ class CFT:
                       gmin=30
                   french_grades[gmin]
                   french_grades[gmax]
+                  prediction+= '<li>Endurance: '+french_grades[gmin] +' - '+ french_grades[gmax]+'</li>'
     
-                  self.div_results.text='<strong>Results:</strong> <br>\
+    
+              if  self.rfd_right+self.rfd_left>0 :       
+                rfddd=np.array( [self.rfd_right,self.rfd_left] )
+                rfd=np.mean( rfddd[rfddd>0] )
+                # 117.8 irca - 798.3 = rfd new
+                irca=(rfd*9.81 + 798.3) / 117.8
+                gmin=np.round(irca)-1
+                gmax=np.round(irca)+1       
+                if gmin < 1:
+                    gmin=1
+                if gmax > 30:
+                    gmax=30
+                if gmax < 1:
+                    gmax=1
+                if gmin > 30:
+                    gmin=30
+                prediction+= '<li>Contact strength: '+french_grades[gmin] +' - '+ french_grades[gmax]+'</li>'
+      
+    
+              self.div_results.text='<strong>Results:</strong> <br>\
     <ul>\
     <li>Max. strength left: {:.2f} % BW</li>\
     <li>Max. strength right: {:.2f} % BW</li>\
@@ -500,24 +544,25 @@ class CFT:
     <li>Critical force: {:.2f} % BW</li>\
     <li>Critical force: {:.2f} % of peak force</li>\
     <li>RFD left: {:.2f} % kg/s</li>\
-    <li>RFD right: {:.2f} % kg/s</li>\
-    '.format( (self.max_left/bw)*100,(self.max_right/bw)*100,(self.cf_peak_load/bw)*100,(self.cf_critical_load/bw)*100,self.cf_percent,self.rfd_left,self.rfd_right) +\
-    '<li>Predicted redpoint grade (french sport): '+french_grades[gmin] +' - '+ french_grades[gmax]+'</li></ul>'
-    
-   
-              else:              
-                  self.div_results.text='<strong>Results:</strong> <br>\
-    <ul>\
-    <li>Max. strength left hand: {:.2f} % BW</li>\
-    <li>Max. strength right hand: {:.2f} % BW</li>\
-    <li>Peak force: {:.2f} % BW</li>\
-    <li>Critical force: {:.2f} % BW</li>\
-    <li>Critical force: {:.2f} % of peak force</li>\
-    <li>RFD left: {:.2f} % kg/s</li>\
     <li>RFD right: {:.2f} % kg/s</li></ul>\
     '.format( (self.max_left/bw)*100,(self.max_right/bw)*100,(self.cf_peak_load/bw)*100,(self.cf_critical_load/bw)*100,self.cf_percent,self.rfd_left,self.rfd_right) 
+     
+              self.div_results.text+= prediction + '</ul>'            
+   
+    #           else:              
+    #               self.div_results.text='<strong>Results:</strong> <br>\
+    # <ul>\
+    # <li>Max. strength left hand: {:.2f} % BW</li>\
+    # <li>Max. strength right hand: {:.2f} % BW</li>\
+    # <li>Peak force: {:.2f} % BW</li>\
+    # <li>Critical force: {:.2f} % BW</li>\
+    # <li>Critical force: {:.2f} % of peak force</li>\
+    # <li>RFD left: {:.2f} % kg/s</li>\
+    # <li>RFD right: {:.2f} % kg/s</li></ul>\
+    # '.format( (self.max_left/bw)*100,(self.max_right/bw)*100,(self.cf_peak_load/bw)*100,(self.cf_critical_load/bw)*100,self.cf_percent,self.rfd_left,self.rfd_right) 
               
-          except:          
+          except Exception as e:
+            # print(e)  
             self.div_results.text='<strong>Results:</strong> <br>\
             <ul>\
             <li>Max. strength left hand: {:.2f} kg</li>\
@@ -529,6 +574,7 @@ class CFT:
             <li>RFD right: {:.2f} % kg/s</li>\
             </ul>'.format( self.max_left,self.max_right,self.cf_peak_load,self.cf_critical_load,self.cf_percent,self.rfd_left,self.rfd_right)               
               
+        
         
     def check_for_timeout(self):
         self.seconds_left = (60*30) - (time.time() - self.timout_t0 )
