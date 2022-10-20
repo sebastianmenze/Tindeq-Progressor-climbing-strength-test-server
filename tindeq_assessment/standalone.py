@@ -486,11 +486,13 @@ class CFT:
                    maxxx=np.array( [self.max_right,self.max_left] )
                    max_onehand=np.mean( maxxx[maxxx>0] )
                    kg=max_onehand *2 -bw
-                   irca = (kg*9.81 + 59.9 )/ 28.5 
-                   gmin=np.round(irca)-1
-                   gmax=np.round(irca)+1
-                   # gmin = (kg*9.81 + 50 )/ 29
-                   # gmax = (kg*9.81 + 70 )/ 28 
+                   if kg<=20:
+                        gmin=7
+                        gmax=11
+                   else:    
+                        irca = (kg*9.81 + 59.9 )/ 28.5 
+                        gmin=np.round(irca)-2
+                        gmax=np.round(irca)+2
                    if gmin < 1:
                        gmin=1
                    if gmax > 30:
