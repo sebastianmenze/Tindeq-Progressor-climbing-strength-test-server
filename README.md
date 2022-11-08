@@ -37,8 +37,9 @@ Max. strength: 7a+ - 7c+
 Endurance: 7a - 7c+
 Contact strength: 7b - 7c
 ```
-This is based on regressions from these papers:
+This is based on linar regression from these papers:
 https://www.researchgate.net/publication/343601001_An_All-Out_Test_to_Determine_Finger_Flexor_Critical_Force_in_Rock_Climbers
+
 https://www.researchgate.net/publication/361584427_Differences_in_Upper-Body_Peak_Force_and_Rate_of_Force_Development_in_Male_Intermediate_Advanced_and_Elite_Sport_Climbers
 
 ![](Capture.JPG)
