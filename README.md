@@ -17,7 +17,7 @@ python standalone.py
 ```
 Compiled .exe can be downloaded under 'releases'
 
-When entering bodyweight, resulsta are interpredted as follows:
+When entering bodyweight, the test results are interpredted as follows:
 ```
 Results:
 
