@@ -428,7 +428,7 @@ class CFT:
         
         doc.add_root(self.layout)
         
-        self.calback_update_mail = doc.add_periodic_callback(self.update_email, 50)
+        self.calback_update_mail = doc.add_periodic_callback(self.update_email, 200)
 
     def update_email(self):    
           if self.cf_peak_load>0:          
@@ -744,7 +744,7 @@ class CFT:
 
         self.fig = figure(title='Real-time Data', sizing_mode='stretch_both', x_axis_label='Seconds', y_axis_label='kg')
         self.fig.line(x='x', y='y', source=self.source,line_width =2)
-        self.fig.line(x='x', y='y', source=self.source_end,line_width =1,line_color='black',line_dash='dashed')
+        self.fig.line(x='x', y='y', source=self.source_end,line_width =2,line_color='black',line_dash='dashed')
        
         self.btn_go = Button(label='Waiting for Progressor...')
         self.btn_go.on_click(self.onclick_livetarget)
