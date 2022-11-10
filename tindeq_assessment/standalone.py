@@ -223,7 +223,7 @@ class CFT:
         def verify():
             # if password.value==self.pwd:
                 self.layout.children.pop()
-                self.layout.children.pop()
+                # self.layout.children.pop()
                 self.make_document_choice(doc)    
                 self.timout_t0=  time.time()
                 # self.calback_timeout = self.doc.add_periodic_callback(self.check_for_timeout, 100)
@@ -238,7 +238,7 @@ class CFT:
         # self.layout=column(password,button)
     
     
-        self.layout=column(column(),column(button))
+        self.layout=column(button)
         doc.add_root(self.layout)
 
 
@@ -761,10 +761,10 @@ class CFT:
                 self.layout.children.pop()
                 self.layout.children.pop()
                 self.make_document_choice(doc)       
+                doc.remove_periodic_callback(self.calback_update_livetarget)
                 if self.tindeq is not None:
                     io_loop = tornado.ioloop.IOLoop.current()              
                     io_loop.add_callback(stop_tindeq_logging, self)
-                    doc.remove_periodic_callback(self.calback_update_livetarget)
 
         self.button_save.on_click(mainmenue)
  
@@ -795,7 +795,7 @@ class CFT:
         doc.add_root(self.layout)
 
         # self.fig = fig
-        self.calback_update_livetarget = doc.add_periodic_callback(self.update_livetarget, 10)
+        self.calback_update_livetarget = doc.add_periodic_callback(self.update_livetarget, 50)
         self.btn_go.disabled=True
 
     def update_livetarget(self):      
@@ -1138,10 +1138,10 @@ class CFT:
         if self.test_done and not self.analysed:
             # self.btn.label = 'Restart test'
             # np.savetxt('critical_force_test.txt', np.column_stack((self.x, self.y)))
-            try:
-                  export_png(self.fig, filename="critical_force_test.png")
-            except Exception as e  :
-                  print(e)        
+            # try:
+            #       export_png(self.fig, filename="critical_force_test.png")
+            # except Exception as e  :
+            #       print(e)        
             try:
                 self.analyse_cft()                         
             except Exception as e  :
