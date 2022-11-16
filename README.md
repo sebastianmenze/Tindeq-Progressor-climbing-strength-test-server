@@ -3,7 +3,7 @@ A python and bokeh application that creates a user interface to run climbing str
 
 Designed for a self-assessment test station in our local climbing gym with this device: https://tindeq.com/product/progressor/
 
-Here is an example for the critical force test, it also comes woth a built in timer and countdown sounds:
+Here is an example for the critical force test, that comes with a built in timer and countdown sounds:
 ![](cf1.JPG)
 
 The code is partially based on this repository: https://github.com/StuartLittlefair/PyTindeq
