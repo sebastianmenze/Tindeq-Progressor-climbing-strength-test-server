@@ -3,6 +3,9 @@ A python and bokeh application that creates a user interface to run climbing str
 
 Designed for a self-assessment test station in our local climbing gym with this device: https://tindeq.com/product/progressor/
 
+![](cf1.JPG)
+
+
 Partially based on this repository: https://github.com/StuartLittlefair/PyTindeq
 
 run as bokeh server (current password is 'pw', can be changed in code):
@@ -42,7 +45,7 @@ https://www.researchgate.net/publication/343601001_An_All-Out_Test_to_Determine_
 
 https://www.researchgate.net/publication/361584427_Differences_in_Upper-Body_Peak_Force_and_Rate_of_Force_Development_in_Male_Intermediate_Advanced_and_Elite_Sport_Climbers
 
-![](Capture.JPG)
-![/tindeq_assessment/static/Presentation1.gif](/tindeq_assessment/static/Presentation1.gif)
 
 The software also provides a training mode, where you can set reps, duration rest time and target force zones
+
+![/tindeq_assessment/static/Presentation1.gif](/tindeq_assessment/static/Presentation1.gif)
