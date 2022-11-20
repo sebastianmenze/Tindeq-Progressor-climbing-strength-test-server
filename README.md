@@ -49,7 +49,5 @@ https://www.researchgate.net/publication/361584427_Differences_in_Upper-Body_Pea
 
 The software also provides a training mode, where you can set reps, duration rest time and target force zones, here is an example f a traning session (the black line and blue line will be moving and you can adjust the location pf the red target boxes):
 
-The software also provides a training mode, where you can set reps, duration rest time and target force zones
-
 ![](training.png)
 
