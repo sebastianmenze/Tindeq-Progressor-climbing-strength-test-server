@@ -45,7 +45,11 @@ https://www.researchgate.net/publication/343601001_An_All-Out_Test_to_Determine_
 
 https://www.researchgate.net/publication/361584427_Differences_in_Upper-Body_Peak_Force_and_Rate_of_Force_Development_in_Male_Intermediate_Advanced_and_Elite_Sport_Climbers
 
+![/tindeq_assessment/static/Presentation1.gif](/tindeq_assessment/static/Presentation1.gif)
+
+The software also provides a training mode, where you can set reps, duration rest time and target force zones, here is an example f a traning session (the black line and blue line will be moving and you can adjust the location pf the red target boxes):
 
 The software also provides a training mode, where you can set reps, duration rest time and target force zones
 
-![/tindeq_assessment/static/Presentation1.gif](/tindeq_assessment/static/Presentation1.gif)
+![](training.png)
+
