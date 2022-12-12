@@ -51,3 +51,4 @@ The software also provides a training mode, where you can set reps, duration res
 
 ![](training.png)
 
+Build with:  python==3.8 and bokeh==2.4.3
