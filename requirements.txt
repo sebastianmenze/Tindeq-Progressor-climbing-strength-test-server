@@ -1,0 +1,5 @@
+bokeh==2.4.3
+tornado==6.1
+pandas
+bleak
+playsound
