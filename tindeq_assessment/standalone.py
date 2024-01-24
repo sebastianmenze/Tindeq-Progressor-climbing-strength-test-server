@@ -1420,7 +1420,7 @@ cft = CFT()
 cft.make_gui(curdoc())
 
 apps = {'/': Application(FunctionHandler(cft.make_gui))}
-server = Server(apps, port=5000 )
+server = Server(apps, port=5006)
 server.start()
 
 if __name__ == "__main__":
